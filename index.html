@@ -7,9 +7,12 @@
     <body>
         <div id="main">
             <h1>JSnake</h1>
-            <p id="state">running</p>
+            <p id="state">press [space] to start</p>
 
-            <p>Score: <span id="score"></span></p>
+            <p id="score-board">
+                <span id="score"></span><br>
+                <span id="highscore"></span>
+            </p>
             <div id="game-board"></div>
 
             <p>
@@ -17,6 +20,28 @@
                 press [R] to reset after crash<br>
                 use ARROW keys to navigate
             </p>
+
+            <div id="mobile-controls">
+                <div class="control-row">
+                    <div class="control-cell"></div>
+                    <button class="control-cell btn" id="mc-ArrowUp">UP</button>
+                    <div class="control-cell"></div>
+                </div>
+                <div class="control-row">
+                    <button class="control-cell btn" id="mc-ArrowLeft">LEFT</button>
+                    <div class="control-cell"></div>
+                    <button class="control-cell btn" id="mc-ArrowRight">RIGHT</button>
+                </div>
+                <div class="control-row">
+                    <div class="control-cell"></div>
+                    <button class="control-cell btn" id="mc-ArrowDown">DOWN</button>
+                    <div class="control-cell"></div>
+                </div>
+                <div class="control-row" style="margin-top: 30px;"> 
+                    <button class="control-cell btn" id="mc-Space">SPACE</button>
+                    <button class="control-cell btn" id="mc-KeyR">R</button>
+                </div>
+            </div>
         </div>
     </body>
     <script src="index.js"></script>

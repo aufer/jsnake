@@ -1,9 +1,11 @@
 (function() {
-
-    function SnakeRunner() {
+    function SnakeGame() {
+        this.contentEl = document.getElementById('main');
         this.boardEl = document.getElementById('game-board');
         this.stateEl = document.getElementById('state');
-        this.scoreEl = document.getElementById('score')
+        this.scoreboardEl = document.getElementById('score-board');
+        this.scoreEl = document.getElementById('score');
+        this.highscoreEl = document.getElementById('highscore');
 
         this.snake = Array.from(initialSnake);
 
@@ -11,32 +13,49 @@
         this.crashed = false;
         this.running = false;
         this.score = 0;
+        this.highscore = SnakeGame.highscore.load();
 
-        this.currentDirection = SnakeRunner.moveEvents.ArrowRight;
+        this.currentDirection = SnakeGame.moveEvents.ArrowRight;
 
         this.init();
     }
-    window['SnakeRunner'] = SnakeRunner;
+    window['SnakeGame'] = SnakeGame;
 
     var initialSnake = [[1,1], [1,2], [1,3], [1,4], [1,5], [1,6]];
 
-    SnakeRunner.SIZE = {
+    SnakeGame.SIZE = {
         width: 60,
         height: 40,
     }
 
-    SnakeRunner.moveEvents = {
+    SnakeGame.moveEvents = {
         ArrowUp: 'ArrowUp',
         ArrowRight: 'ArrowRight',
         ArrowDown: 'ArrowDown',
         ArrowLeft: 'ArrowLeft',
     }
 
-    SnakeRunner.config = {
-        speed: 150,
+    SnakeGame.config = {
+        speed: 120,
     };
 
-    SnakeRunner.prototype = {
+    SnakeGame.state = {
+        Running: 'running',
+        Crashed: 'crashed',
+        Waiting: 'waiting',
+    };
+
+    SnakeGame.highscore = {
+        save: function(count) {
+            localStorage.setItem('jsnake_score', JSON.stringify({count, time: Date.now()}));
+        },
+        load: function() {
+            var score = localStorage.getItem('jsnake_score');
+            return score ? JSON.parse(score) : undefined;
+        }
+    };
+
+    SnakeGame.prototype = {
         init: function() {
             this.listenEvents();
             this.buildBoard();
@@ -44,19 +63,61 @@
         },
 
         run: function() {
-            this.running = true;
+            console.log('run started', this.highscore);
+            this.setGameState(SnakeGame.state.Running);
             var runner = setInterval((function() {
                 if (this.crashed) {
                     clearInterval(runner);
                     return;
                 }
                 this.move(this.currentDirection);
-            }).bind(this), SnakeRunner.config.speed);
+            }).bind(this), SnakeGame.config.speed);
         },
 
         listenEvents: function(evt) {
             document.addEventListener('keydown', this);
+            document.querySelectorAll('.btn').forEach((function(btn) {
+                btn.addEventListener('touchstart', (function(event) {
+                    const key = btn.id.replace('mc-', '');
+                    document.dispatchEvent(new KeyboardEvent('keydown', {key: key, code: key}));
+                }).bind(this))
+            }).bind(this));
         },
+
+        setGameState: function(state) {
+            this.contentEl.classList.add(state);
+
+            switch (state) {
+                case SnakeGame.state.Crashed:
+                    this.running = false;
+                    this.crashed = true;
+                    this.contentEl.classList.remove('running');
+                    this.contentEl.classList.remove('waiting');
+                    this.stateEl.innerText = 'crashed - press [R] to reset';
+                    if (!this.highscore || this.score > this.highscore.count) {
+                        SnakeGame.highscore.save(this.score);
+                    }
+                    break;
+                case SnakeGame.state.Running:
+                    this.score = 0;
+                    this.running = true;
+                    this.crashed = false;
+                    this.contentEl.classList.remove('crashed');
+                    this.contentEl.classList.remove('waiting');
+                    this.stateEl.innerText = 'running'; 
+                    break;
+                case SnakeGame.state.Waiting:
+                    this.score = 0;
+                    this.scoreEl.innerText = 'Score: 0';
+                    this.running = false;
+                    this.crashed = false;
+                    this.contentEl.classList.remove('crashed');
+                    this.contentEl.classList.remove('running');
+                    this.stateEl.innerText = 'press [SPACE] to start'; 
+                    break;
+            }
+        },
+
 
         /**
          * Universal input event handler
@@ -65,13 +126,14 @@
          */
         handleEvent: function (e) {
             if (e.type === 'keydown') {
-                if (Object.keys(SnakeRunner.moveEvents).indexOf(e.key) >= 0) {
+                if (Object.keys(SnakeGame.moveEvents).indexOf(e.key) >= 0) {
+                    if (!this.running) return;
                     if (this.isOppositeDirection(e.key)) return;
                     this.currentDirection = e.key;
                     return;
                 }
 
-                if (e.code === 'Space' && !this.running) {
+                if (e.code === 'Space' && !this.crashed && !this.running) {
                     this.run();
                     return;
                 }
@@ -84,10 +146,10 @@
         },
 
         isOppositeDirection: function(direction) {
-            if (direction === SnakeRunner.moveEvents.ArrowRight && this.currentDirection === SnakeRunner.moveEvents.ArrowLeft) return true;
-            if (direction === SnakeRunner.moveEvents.ArrowLeft && this.currentDirection === SnakeRunner.moveEvents.ArrowRight) return true;
-            if (direction === SnakeRunner.moveEvents.ArrowUp && this.currentDirection === SnakeRunner.moveEvents.ArrowDown) return true;
-            if (direction === SnakeRunner.moveEvents.ArrowDown && this.currentDirection === SnakeRunner.moveEvents.ArrowUp) return true;
+            if (direction === SnakeGame.moveEvents.ArrowRight && this.currentDirection === SnakeGame.moveEvents.ArrowLeft) return true;
+            if (direction === SnakeGame.moveEvents.ArrowLeft && this.currentDirection === SnakeGame.moveEvents.ArrowRight) return true;
+            if (direction === SnakeGame.moveEvents.ArrowUp && this.currentDirection === SnakeGame.moveEvents.ArrowDown) return true;
+            if (direction === SnakeGame.moveEvents.ArrowDown && this.currentDirection === SnakeGame.moveEvents.ArrowUp) return true;
             return false;
         },
 
@@ -95,20 +157,20 @@
             var head = this.snake[this.snake.length - 1];
             var newHead;
 
-            switch(SnakeRunner.moveEvents[direction]) {
-                case SnakeRunner.moveEvents.ArrowUp:
+            switch(SnakeGame.moveEvents[direction]) {
+                case SnakeGame.moveEvents.ArrowUp:
                     newHead = [head[0] - 1, head[1]];
                     this.checkCrash(head[0], 0, newHead);
                     break;
-                case SnakeRunner.moveEvents.ArrowDown:
+                case SnakeGame.moveEvents.ArrowDown:
                     newHead = [head[0] + 1, head[1]];
-                    this.checkCrash(head[0], SnakeRunner.SIZE.height - 1, newHead);
+                    this.checkCrash(head[0], SnakeGame.SIZE.height - 1, newHead);
                     break;
-                case SnakeRunner.moveEvents.ArrowRight:
+                case SnakeGame.moveEvents.ArrowRight:
                     newHead = [head[0], head[1] + 1];
-                    this.checkCrash(head[1], SnakeRunner.SIZE.width - 1, newHead);
+                    this.checkCrash(head[1], SnakeGame.SIZE.width - 1, newHead);
                     break;
-                case SnakeRunner.moveEvents.ArrowLeft:
+                case SnakeGame.moveEvents.ArrowLeft:
                     newHead = [head[0], head[1] - 1];
                     this.checkCrash(head[1], 0, newHead);
                     break;
@@ -120,12 +182,25 @@
                 this.appendFood = false;
                 this.snake = [[...this.foodPos], ...this.snake];
                 this.score = this.score + 1;
-                this.renderFood();
+
+                if (this.highscore && this.highscore.count < this.score) {
+                    this.scoreEl.classList.add('highlight');
+                    setTimeout((function() {
+                        this.scoreEl.classList.remove('highlight');
+                    }).bind(this), 300);
+                }
+
                 this.snake.push(newHead);
+                this.renderFood();
                 this.renderSnake();
                 this.renderScore();
                 return;
             }
+
+            // if (this.positionMatches(this.snake[this.snake.length - 1], this.foodPos)) {
+            //     this.foodToTake = [...this.foodPos];
+            //     this.renderFood();
+            // }
 
             if (this.positionMatches(this.snake[0], this.foodPos)) {
                 this.appendFood = true;
@@ -137,10 +212,7 @@
 
         checkCrash: function(head, boundary, newHead) {
             if (head === boundary || this.canibalizes(newHead)) {
-                this.crashed = true;
-                this.running = false;
-                this.boardEl.classList.add('crashed');
-                this.stateEl.innerText = 'crashed'; 
+                this.setGameState(SnakeGame.state.Crashed);
             }
         },
 
@@ -158,11 +230,11 @@
         buildBoard: function() {
             if (this.rendered) return;
 
-            for (var i = 0; i < SnakeRunner.SIZE.height; i++) {
+            for (var i = 0; i < SnakeGame.SIZE.height; i++) {
                 var row = document.createElement('div');
                 row.classList.add('row');
                 row.id = 'row_' + i;
-                for (var j = 0; j < SnakeRunner.SIZE.width; j++) {
+                for (var j = 0; j < SnakeGame.SIZE.width; j++) {
                     var cell = document.createElement('div');
                     cell.classList.add('cell');
                     cell.id = 'cell_' + i + '_' + j;
@@ -204,8 +276,8 @@
             if (oldFood) oldFood.remove();
 
             this.foodPos = [
-                Math.floor(Math.random() * Math.floor(SnakeRunner.SIZE.height)),
-                Math.floor(Math.random() * Math.floor(SnakeRunner.SIZE.width)),
+                Math.floor(Math.random() * Math.floor(SnakeGame.SIZE.height)),
+                Math.floor(Math.random() * Math.floor(SnakeGame.SIZE.width)),
             ];
 
             var food = document.createElement('div');
@@ -214,7 +286,11 @@
         },
 
         renderScore: function() {
-            this.scoreEl.innerText = this.score;
+            if (this.highscore) {
+                var d = new Date(this.highscore.time);
+                this.highscoreEl.innerText = 'Highscore: ' + this.highscore.count + ' from ' + d.toLocaleDateString();
+            }
+            this.scoreEl.innerText = 'Score: ' + this.score;
         },
 
         render: function() {
@@ -224,11 +300,10 @@
         },
 
         reset: function() {
+            this.highscore = SnakeGame.highscore.load();
             this.snake = Array.from(initialSnake)
-            this.crashed = false;
-            this.stateEl.innerText = 'running';
-            this.boardEl.classList.remove('crashed');
-            this.currentDirection = SnakeRunner.moveEvents.ArrowRight;
+            this.setGameState(SnakeGame.state.Waiting);
+            this.currentDirection = SnakeGame.moveEvents.ArrowRight;
 
             this.render();
         }
@@ -236,5 +311,5 @@
 })();
 
 document.addEventListener('DOMContentLoaded', function() {
-    new SnakeRunner();
+    new SnakeGame();
 });

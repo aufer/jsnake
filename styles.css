@@ -1,18 +1,40 @@
 html {
-    font-size: 16px;
+    font-size: 20px;
     font-family: sans-serif;
 }
 
 #main {
-    width: 90%;
+    width: 100%;
     margin: 0 auto;
-    max-width: 600px;
+}
+
+#state {
+    background-color: #eee;
+    padding: 10px;
+}
+
+.running #state {
+    color: white;
+    background-color: green
+}
+
+.crashed #state {
+    color: white;
+    background-color: red;
+}
+
+#score {
+    transition: background-color 150ms linear;
+}
+
+#score.highlight {
+    background-color: blue;
+    color: white;
 }
 
 #game-board {
-    width: 600px;
-    
-    height: calc(1.1 * 400px);
+    width: 100%;
+    height: calc(40 * 15px * 1.1);
 }
 
 .row {
@@ -23,7 +45,7 @@ html {
     flex: 1;
     background-color: #eee;
     margin: 0 1px 1px 0;
-    height: 10px;
+    height: 15px;
 }
 
 .snake {
@@ -48,4 +70,52 @@ html {
     width: 100%;
     height: 100%;
     background-color: orange;
+}
+
+#mobile-controls {
+    margin: 32px auto;
+    width: 80%;
+}
+
+#mobile-controls .control-row {
+    display: flex;
+}
+
+#mobile-controls .control-cell {
+    flex: 1;
+    text-align: center;
+    padding: 20px 10px;
+    margin: 3px;
+}
+
+.control-cell.btn {
+    background-color: #eee;
+    font-size: 32px;
+}
+
+.control-cell.btn:focus,
+.control-cell.btn:hover {
+    background-color: #aaa;
+}
+
+@media (min-device-width: 600px) {
+    html {
+        font-size: 14px;
+    }
+
+    #mobile-controls {
+        display: none;
+    }
+
+    #main {
+        max-width: 690px;
+    }
+
+    #game-board {
+        height: calc(40 * 10px * 1.1);
+    }
+    
+    .cell {
+        height: 10px;
+    }
 }
