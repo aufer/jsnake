@@ -1,0 +1,51 @@
+html {
+    font-size: 16px;
+    font-family: sans-serif;
+}
+
+#main {
+    width: 90%;
+    margin: 0 auto;
+    max-width: 600px;
+}
+
+#game-board {
+    width: 600px;
+    
+    height: calc(1.1 * 400px);
+}
+
+.row {
+    display: flex;
+}
+
+.cell {
+    flex: 1;
+    background-color: #eee;
+    margin: 0 1px 1px 0;
+    height: 10px;
+}
+
+.snake {
+    width: 100%;
+    height: 100%;
+    background-color: green;
+}
+
+.snake__head {
+    background-color: darkslategrey;
+}
+
+.crashed .snake {
+    background-color: red;
+}
+
+.crashed .snake__head {
+    background-color: darkred;
+}
+
+#food {
+    width: 100%;
+    height: 100%;
+    background-color: orange;
+}
