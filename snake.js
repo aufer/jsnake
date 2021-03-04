@@ -15,6 +15,8 @@
         this.score = 0;
         this.highscore = SnakeGame.highscore.load();
 
+        this.renderer = new SRenderer();
+
         this.currentDirection = SnakeGame.moveEvents.ArrowRight;
 
         this.init();
@@ -197,9 +199,7 @@
                 }
 
                 this.snake.push(newHead);
-                this.renderFood();
-                this.renderSnake();
-                this.renderScore();
+                this.render();
                 return;
             }
 
@@ -246,6 +246,15 @@
             this.rendered = true;
         },
 
+        reset: function() {
+            this.highscore = SnakeGame.highscore.load();
+            this.snake = Array.from(initialSnake)
+            this.setGameState(SnakeGame.state.Waiting);
+            this.currentDirection = SnakeGame.moveEvents.ArrowRight;
+
+            this.render();
+        },
+
         renderSnake: function(tail) {
             if (tail) {
                 document.getElementById('snake_' + tail[0] + '_' + tail[1]).remove();
@@ -277,8 +286,8 @@
             if (oldFood) oldFood.remove();
 
             this.foodPos = [
-                Math.floor(Math.random() * Math.floor(SnakeGame.SIZE.height)),
-                Math.floor(Math.random() * Math.floor(SnakeGame.SIZE.width)),
+                Math.floor(Math.random() * (Math.floor(SnakeGame.SIZE.height - 1) - 1) + 1),
+                Math.floor(Math.random() * (Math.floor(SnakeGame.SIZE.width - 1) - 1) + 1),
             ];
 
             var food = document.createElement('div');
@@ -299,15 +308,6 @@
             this.renderScore();
             this.renderFood();
         },
-
-        reset: function() {
-            this.highscore = SnakeGame.highscore.load();
-            this.snake = Array.from(initialSnake)
-            this.setGameState(SnakeGame.state.Waiting);
-            this.currentDirection = SnakeGame.moveEvents.ArrowRight;
-
-            this.render();
-        }
     };
 })();
 
