@@ -1,17 +1,27 @@
 <html>
     <head>
         <title>JSnake</title>
+        <meta name="viewport" content="user-scalable=no" />
         <link rel="stylesheet" href="styles.css">
     </head>
 
     <body>
         <div id="main">
             <h1>JSnake</h1>
+
+            <form>
+                <fieldset id="form">
+                    <legend>Settings</legend>
+                    <input type="text" placeholder="Name" id="form-name"><br>
+                    <input type="range" min="1" max="5" value="3" id="form-speed"><br>Speed: <span id="selected-speed">3</span>
+                </fieldset>
+            </form>
+
             <p id="state">press [space] to start</p>
 
             <p id="score-board">
                 <span id="score"></span><br>
-                <span id="highscore"></span>
+                <span id="highscore"></span>&nbsp;<button id="show-highscore">Global Highscore</button>
             </p>
             <div id="game-board"></div>
 
@@ -41,6 +51,11 @@
                     <button class="control-cell btn" id="mc-Space">SPACE</button>
                     <button class="control-cell btn" id="mc-KeyR">R</button>
                 </div>
+            </div>
+
+            <div id="global-highscore-modal">
+                <h2>Global Highscore</h2>
+                <ol id="highscore-list"></ol>
             </div>
         </div>
     </body>

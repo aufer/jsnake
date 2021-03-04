@@ -7,12 +7,25 @@
         this.scoreEl = document.getElementById('score');
         this.highscoreEl = document.getElementById('highscore');
 
+        this.formEl = document.getElementById('form');
+        this.speedEl = document.getElementById('form-speed');
+        this.selectedSpeedEl = document.getElementById('selected-speed');
+        this.nameEl = document.getElementById('form-name');
+        this.nameEl.focus();
+
+        this.highscoreModalEl = document.getElementById('global-highscore-modal');
+        this.highscoreModalEl.style.display = 'none';
+        this.highscoreListEl = document.getElementById('highscore-list');
+        this.highscoreBtnEl = document.getElementById('show-highscore');
+
         this.snake = Array.from(initialSnake);
 
         this.rendered = false;
         this.crashed = false;
         this.running = false;
         this.score = 0;
+        this.speed = 3;
+        this.name = 'anonymous';
         this.highscore = SnakeGame.highscore.load();
 
         this.renderer = new SRenderer();
@@ -48,8 +61,8 @@
     };
 
     SnakeGame.highscore = {
-        save: function(count) {
-            localStorage.setItem('jsnake_score', JSON.stringify({count, time: Date.now()}));
+        save: function(count, name) {
+            localStorage.setItem('jsnake_score', JSON.stringify({count, time: Date.now(), name}));
         },
         load: function() {
             var score = localStorage.getItem('jsnake_score');
@@ -74,7 +87,7 @@
         loop: function() {
             if (this.crashed || !this.running) return;
 
-            if (Date.now() - this.lastRendered >= 100) {
+            if (Date.now() - this.lastRendered >= SnakeGame.config.speed) {
                 this.lastRendered = Date.now()
                 this.move(this.currentDirection);
             }
@@ -83,6 +96,7 @@
         },
 
         listenEvents: function(evt) {
+            // handle game control input
             document.addEventListener('keydown', this);
             document.querySelectorAll('.btn').forEach((function(btn) {
                 btn.addEventListener('touchstart', (function(event) {
@@ -90,6 +104,25 @@
                     document.dispatchEvent(new KeyboardEvent('keydown', {key: key, code: key}));
                 }).bind(this))
             }).bind(this));
+
+            // user settings
+            this.speedEl.addEventListener('change', evt => {
+                this.speed = evt.target.value;
+                SnakeGame.config.speed = (6 - this.speed) * 40;
+                this.selectedSpeedEl.innerText = this.speed;
+            })
+
+            this.nameEl.addEventListener('blur', evt => {
+                this.name = this.nameEl.value;
+            });
+
+            this.highscoreBtnEl.addEventListener('click', (function() {
+                this.showHighscore();
+            }).bind(this));
+
+            this.highscoreModalEl.addEventListener('click', (function() {
+                this.highscoreModalEl.style.display = 'none';
+            }).bind(this))
         },
 
         setGameState: function(state) {
@@ -103,7 +136,11 @@
                     this.contentEl.classList.remove('waiting');
                     this.stateEl.innerText = 'crashed - press [R] to reset';
                     if (!this.highscore || this.score > this.highscore.count) {
-                        SnakeGame.highscore.save(this.score);
+                        var xhttp = new XMLHttpRequest();
+                        xhttp.open("POST", "https://schlange.ausgeufert.de/highscore.php", false);
+                        xhttp.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
+                        xhttp.send(JSON.stringify({count: this.score, name: this.name, time: Date.now()}));
+                        SnakeGame.highscore.save(this.score, this.name);
                     }
                     break;
                 case SnakeGame.state.Running:
@@ -112,6 +149,9 @@
                     this.crashed = false;
                     this.contentEl.classList.remove('crashed');
                     this.contentEl.classList.remove('waiting');
+                    this.speedEl.blur();
+                    this.nameEl.blur();
+                    this.formEl.disabled = 'disabled';
                     this.stateEl.innerText = 'running'; 
                     break;
                 case SnakeGame.state.Waiting:
@@ -121,6 +161,7 @@
                     this.crashed = false;
                     this.contentEl.classList.remove('crashed');
                     this.contentEl.classList.remove('running');
+                    this.formEl.disabled = null;
                     this.stateEl.innerText = 'press [SPACE] to start'; 
                     break;
             }
@@ -146,7 +187,7 @@
                     return;
                 }
 
-                if (e.code === 'KeyR' && !this.running) {
+                if (e.code === 'KeyR' && this.crashed) {
                     this.reset();
                     return;
                 }
@@ -255,6 +296,24 @@
             this.render();
         },
 
+        showHighscore: function() {
+            var xhttp = new XMLHttpRequest();
+            xhttp.open("GET", "https://schlange.ausgeufert.de/highscore.php", false);
+            xhttp.send();
+            console.log(xhttp.responseText);
+            var result = JSON.parse(xhttp.responseText);
+
+            document.querySelectorAll('#highscore-list li').forEach(function(elem) { elem.remove() });
+
+            result.body.forEach((function(item, idx) {
+                var li = document.createElement('li');
+                li.innerText = item.name + ' with ' + item.count + ' from ' + new Date(+item.time).toLocaleDateString();
+                this.highscoreListEl.appendChild(li)
+            }).bind(this));
+            this.highscoreModalEl.style.display = 'block';
+            // document.getElementById("demo").innerHTML = ;
+        },
+
         renderSnake: function(tail) {
             if (tail) {
                 document.getElementById('snake_' + tail[0] + '_' + tail[1]).remove();
@@ -298,12 +357,13 @@
         renderScore: function() {
             if (this.highscore) {
                 var d = new Date(this.highscore.time);
-                this.highscoreEl.innerText = 'Highscore: ' + this.highscore.count + ' from ' + d.toLocaleDateString();
+                this.highscoreEl.innerText = 'Highscore: ' + this.highscore.count + ' from ' + d.toLocaleDateString() + ((this.highscore.name) ? ' by ' + this.highscore.name : '');
             }
             this.scoreEl.innerText = 'Score: ' + this.score;
         },
 
         render: function() {
+            this.nameEl.value = this.name ? this.name : 'anonymous';
             this.renderSnake();
             this.renderScore();
             this.renderFood();
