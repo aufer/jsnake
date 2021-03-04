@@ -28,8 +28,6 @@
         this.name = 'anonymous';
         this.highscore = SnakeGame.highscore.load();
 
-        this.renderer = new SRenderer();
-
         this.currentDirection = SnakeGame.moveEvents.ArrowRight;
 
         this.init();
