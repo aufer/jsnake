@@ -63,15 +63,21 @@
         },
 
         run: function() {
-            console.log('run started', this.highscore);
             this.setGameState(SnakeGame.state.Running);
-            var runner = setInterval((function() {
-                if (this.crashed) {
-                    clearInterval(runner);
-                    return;
-                }
+
+            this.lastRendered = Date.now();
+            window.requestAnimationFrame(this.loop.bind(this));
+        },
+
+        loop: function() {
+            if (this.crashed || !this.running) return;
+
+            if (Date.now() - this.lastRendered >= 100) {
+                this.lastRendered = Date.now()
                 this.move(this.currentDirection);
-            }).bind(this), SnakeGame.config.speed);
+            }
+            
+            window.requestAnimationFrame(this.loop.bind(this));
         },
 
         listenEvents: function(evt) {
