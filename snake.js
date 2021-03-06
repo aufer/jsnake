@@ -19,6 +19,7 @@
         this.highscoreBtnEl = document.getElementById('show-highscore');
 
         this.snake = Array.from(initialSnake);
+        this.foodies = [];
 
         this.rendered = false;
         this.crashed = false;
@@ -133,7 +134,7 @@
                     this.contentEl.classList.remove('running');
                     this.contentEl.classList.remove('waiting');
                     this.stateEl.innerText = 'crashed - press [R] to reset';
-                    if (!this.highscore || this.score > this.highscore.count) {
+                    if ((!this.highscore || this.score > this.highscore.count) && window.location.href.indexOf('file:') < 0) {
                         var xhttp = new XMLHttpRequest();
                         xhttp.open("POST", "https://schlange.ausgeufert.de/highscore.php", false);
                         xhttp.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
@@ -159,6 +160,7 @@
                     this.crashed = false;
                     this.contentEl.classList.remove('crashed');
                     this.contentEl.classList.remove('running');
+                    document.querySelectorAll('.food').forEach(function(elem) { elem.classList.remove('food')});
                     this.formEl.disabled = null;
                     this.stateEl.innerText = 'press [SPACE] to start'; 
                     break;
@@ -193,10 +195,11 @@
         },
 
         isOppositeDirection: function(direction) {
-            if (direction === SnakeGame.moveEvents.ArrowRight && this.currentDirection === SnakeGame.moveEvents.ArrowLeft) return true;
-            if (direction === SnakeGame.moveEvents.ArrowLeft && this.currentDirection === SnakeGame.moveEvents.ArrowRight) return true;
-            if (direction === SnakeGame.moveEvents.ArrowUp && this.currentDirection === SnakeGame.moveEvents.ArrowDown) return true;
-            if (direction === SnakeGame.moveEvents.ArrowDown && this.currentDirection === SnakeGame.moveEvents.ArrowUp) return true;
+            var d = SnakeGame.moveEvents;
+            if (direction === d.ArrowRight && this.currentDirection === d.ArrowLeft) return true;
+            if (direction === d.ArrowLeft && this.currentDirection === d.ArrowRight) return true;
+            if (direction === d.ArrowUp && this.currentDirection === d.ArrowDown) return true;
+            if (direction === d.ArrowDown && this.currentDirection === d.ArrowUp) return true;
             return false;
         },
 
@@ -207,53 +210,52 @@
             switch(SnakeGame.moveEvents[direction]) {
                 case SnakeGame.moveEvents.ArrowUp:
                     newHead = [head[0] - 1, head[1]];
-                    this.checkCrash(head[0], 0, newHead);
                     break;
                 case SnakeGame.moveEvents.ArrowDown:
                     newHead = [head[0] + 1, head[1]];
-                    this.checkCrash(head[0], SnakeGame.SIZE.height - 1, newHead);
                     break;
                 case SnakeGame.moveEvents.ArrowRight:
                     newHead = [head[0], head[1] + 1];
-                    this.checkCrash(head[1], SnakeGame.SIZE.width - 1, newHead);
                     break;
                 case SnakeGame.moveEvents.ArrowLeft:
                     newHead = [head[0], head[1] - 1];
-                    this.checkCrash(head[1], 0, newHead);
                     break;
             }
 
-            if (this.crashed) return;
-
-            if (this.appendFood) {
-                this.appendFood = false;
-                this.snake = [[...this.foodPos], ...this.snake];
-                this.score = this.score + 1;
-
-                if (this.highscore && this.highscore.count < this.score) {
-                    this.scoreEl.classList.add('highlight');
-                    setTimeout((function() {
-                        this.scoreEl.classList.remove('highlight');
-                    }).bind(this), 300);
-                }
-
-                this.snake.push(newHead);
-                this.render();
+            if (this.willCrash(newHead)) {
+                this.setGameState(SnakeGame.state.Crashed);
                 return;
-            }
-
-            if (this.positionMatches(this.snake[0], this.foodPos)) {
-                this.appendFood = true;
-            }
+            };
 
             this.snake.push(newHead);
+
+            if (this.positionMatches(newHead, this.foodPos)) {
+                this.foodies.push(Array.from(this.foodPos));
+                this.renderFood();
+                this.score = this.score + 1;
+                this.renderScore();
+            }
+
+            if (this.foodies.length > 0) {
+                var tail = this.snake[0];
+                var food = this.foodies[0];
+
+                if (this.positionMatches(tail, food)) {
+                    this.snake = [[...this.foodies.shift()], ...this.snake];
+                    document.getElementById('cell_' + food[0] + '_' + food[1]).classList.remove('food');
+                    this.renderSnake();
+                    return;
+                }
+            }
+
             this.renderSnake(this.snake.shift());
         },
 
-        checkCrash: function(head, boundary, newHead) {
-            if (head === boundary || this.canibalizes(newHead)) {
-                this.setGameState(SnakeGame.state.Crashed);
-            }
+        willCrash: function(newHead) {
+            if (newHead[0] < 0 || newHead[0] >= SnakeGame.SIZE.height) return true;
+            if (newHead[1] < 0 || newHead[1] >= SnakeGame.SIZE.width) return true;
+            if (this.canibalizes(newHead)) return true;
+            return false;
         },
 
         canibalizes: function(newHead) {
@@ -298,7 +300,6 @@
             var xhttp = new XMLHttpRequest();
             xhttp.open("GET", "https://schlange.ausgeufert.de/highscore.php", false);
             xhttp.send();
-            console.log(xhttp.responseText);
             var result = JSON.parse(xhttp.responseText);
 
             document.querySelectorAll('#highscore-list li').forEach(function(elem) { elem.remove() });
@@ -339,17 +340,19 @@
         },
 
         renderFood: function() {
-            var oldFood = document.getElementById('food');
-            if (oldFood) oldFood.remove();
+            var overlaps = true;
+            do {
+                this.foodPos = [
+                    Math.floor(Math.random() * (Math.floor(SnakeGame.SIZE.height - 1) - 1) + 1),
+                    Math.floor(Math.random() * (Math.floor(SnakeGame.SIZE.width - 1) - 1) + 1),
+                ];
 
-            this.foodPos = [
-                Math.floor(Math.random() * (Math.floor(SnakeGame.SIZE.height - 1) - 1) + 1),
-                Math.floor(Math.random() * (Math.floor(SnakeGame.SIZE.width - 1) - 1) + 1),
-            ];
+                overlaps = !this.snake.every((function(elem) {
+                    return !this.positionMatches(this.foodPos, elem);
+                }).bind(this));
+            } while(overlaps);
 
-            var food = document.createElement('div');
-            food.id = 'food';
-            document.getElementById('cell_' + this.foodPos[0] + '_' + this.foodPos[1]).append(food);
+            document.getElementById('cell_' + this.foodPos[0] + '_' + this.foodPos[1]).classList.add('food');
         },
 
         renderScore: function() {

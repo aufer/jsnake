@@ -107,10 +107,14 @@ html {
     background-color: darkred;
 }
 
-#food {
+.food {
     width: 100%;
     height: 100%;
     background-color: orange;
+}
+
+.food .snake {
+    display: none;
 }
 
 #mobile-controls {
