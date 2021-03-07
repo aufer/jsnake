@@ -30,12 +30,13 @@
         this.highscore = SnakeGame.highscore.load();
 
         this.currentDirection = SnakeGame.moveEvents.ArrowRight;
+        this.nextDirection = SnakeGame.moveEvents.ArrowRight;
 
         this.init();
     }
     window['SnakeGame'] = SnakeGame;
 
-    var initialSnake = [[1,1], [1,2], [1,3], [1,4], [1,5], [1,6]];
+    var initialSnake = [[1,1], [1,2], [1,3]];
 
     SnakeGame.SIZE = {
         width: 60,
@@ -88,7 +89,7 @@
 
             if (Date.now() - this.lastRendered >= SnakeGame.config.speed) {
                 this.lastRendered = Date.now()
-                this.move(this.currentDirection);
+                this.move(this.nextDirection);
             }
             
             window.requestAnimationFrame(this.loop.bind(this));
@@ -178,7 +179,7 @@
                 if (!!SnakeGame.moveEvents[e.key]) {
                     if (!this.running) return;
                     if (this.isOppositeDirection(e.key)) return;
-                    this.currentDirection = e.key;
+                    this.nextDirection = e.key;
                     return;
                 }
 
@@ -230,7 +231,7 @@
             this.snake.push(newHead);
 
             if (this.positionMatches(newHead, this.foodPos)) {
-                this.foodies.push(Array.from(this.foodPos));
+                this.foodies.push([...this.foodPos]);
                 this.renderFood();
                 this.score = this.score + 1;
                 this.renderScore();
@@ -248,6 +249,7 @@
                 }
             }
 
+            this.currentDirection = this.nextDirection;
             this.renderSnake(this.snake.shift());
         },
 
@@ -292,6 +294,7 @@
             this.snake = Array.from(initialSnake)
             this.setGameState(SnakeGame.state.Waiting);
             this.currentDirection = SnakeGame.moveEvents.ArrowRight;
+            this.nextDirection = SnakeGame.moveEvents.ArrowRight;
 
             this.render();
         },

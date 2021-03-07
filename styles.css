@@ -84,7 +84,7 @@ html {
 
 .cell {
     flex: 1;
-    background-color: #eee;
+    background-color: #ddd;
     margin: 0 1px 1px 0;
     height: 15px;
 }
