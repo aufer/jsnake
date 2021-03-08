@@ -48,6 +48,10 @@
         ArrowRight: 'ArrowRight',
         ArrowDown: 'ArrowDown',
         ArrowLeft: 'ArrowLeft',
+        w: 'ArrowUp',
+        a: 'ArrowLeft',
+        s: 'ArrowDown',
+        d: 'ArrowRight',
     }
 
     SnakeGame.config = {
@@ -176,6 +180,7 @@
          */
         handleEvent: function (e) {
             if (e.type === 'keydown') {
+                console.log(e.key);
                 if (!!SnakeGame.moveEvents[e.key]) {
                     if (!this.running) return;
                     if (this.isOppositeDirection(e.key)) return;
