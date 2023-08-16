@@ -24,6 +24,7 @@
         this.rendered = false;
         this.crashed = false;
         this.running = false;
+        this.paused = false;
         this.score = 0;
         this.speed = 3;
         this.name = 'anonymous';
@@ -39,8 +40,8 @@
     var initialSnake = [[1,1], [1,2], [1,3]];
 
     SnakeGame.SIZE = {
-        width: 60,
-        height: 40,
+        width: 15,
+        height: 15,
     }
 
     SnakeGame.moveEvents = {
@@ -60,6 +61,7 @@
 
     SnakeGame.state = {
         Running: 'running',
+        Paused:  'paused',
         Crashed: 'crashed',
         Waiting: 'waiting',
     };
@@ -88,8 +90,14 @@
             window.requestAnimationFrame(this.loop.bind(this));
         },
 
+        pause: function() {
+            this.setGameState(SnakeGame.state.Paused);
+        },
+
         loop: function() {
             if (this.crashed || !this.running) return;
+
+            if (this.paused) return;
 
             if (Date.now() - this.lastRendered >= SnakeGame.config.speed) {
                 this.lastRendered = Date.now()
@@ -156,7 +164,7 @@
                     this.speedEl.blur();
                     this.nameEl.blur();
                     this.formEl.disabled = 'disabled';
-                    this.stateEl.innerText = 'running'; 
+                    this.stateEl.innerText = 'running - press [SPACE] to pause'; 
                     break;
                 case SnakeGame.state.Waiting:
                     this.score = 0;
@@ -169,6 +177,11 @@
                     this.formEl.disabled = null;
                     this.stateEl.innerText = 'press [SPACE] to start'; 
                     break;
+                case SnakeGame.state.Paused:
+                    this.running = false;
+                    this.crashed = false;
+                    this.contentEl.classList.remove('running');
+                    this.stateEl.innerText = 'paused - press [SPACE] to continue'; 
             }
         },
 
@@ -180,7 +193,6 @@
          */
         handleEvent: function (e) {
             if (e.type === 'keydown') {
-                console.log(e.key);
                 if (!!SnakeGame.moveEvents[e.key]) {
                     if (!this.running) return;
                     if (this.isOppositeDirection(e.key)) return;
@@ -193,7 +205,12 @@
                     return;
                 }
 
-                if (e.code === 'KeyR' && this.crashed) {
+                if (e.code === 'Space' && this.running) {
+                    this.pause();
+                    return;
+                }
+
+                if (e.code === 'KeyR') {
                     this.reset();
                     return;
                 }
@@ -247,7 +264,7 @@
                 var food = this.foodies[0];
 
                 if (this.positionMatches(tail, food)) {
-                    this.snake = [[...this.foodies.shift()], ...this.snake];
+                    this.snake = [[...this.foodies.shift()], ...this.snake.slice(1)];
                     document.getElementById('cell_' + food[0] + '_' + food[1]).classList.remove('food');
                     this.renderSnake();
                     return;

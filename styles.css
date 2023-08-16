@@ -75,7 +75,6 @@ html {
 
 #game-board {
     width: 100%;
-    height: calc(40 * 15px * 1.1);
 }
 
 .row {
@@ -83,10 +82,10 @@ html {
 }
 
 .cell {
+    aspect-ratio : 1 / 1;
     flex: 1;
     background-color: #ddd;
     margin: 0 1px 1px 0;
-    height: 15px;
 }
 
 .snake {
@@ -176,13 +175,5 @@ html {
 
     #main {
         max-width: 690px;
-    }
-
-    #game-board {
-        height: calc(40 * 10px * 1.1);
-    }
-    
-    .cell {
-        height: 10px;
     }
 }
